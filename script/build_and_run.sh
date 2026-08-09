@@ -191,7 +191,7 @@ install_integrations() {
   unregister_noninstalled_extensions
 
   echo "Installed: $INSTALLED_APP_BUNDLE"
-  echo "Finder Open With is registered as an alternate handler for compatible videos."
+  echo "Finder Open With is registered as an alternate handler for compatible videos and images."
   echo "Photos extension is registered with PluginKit as $PHOTOS_EXTENSION_ID."
   echo "Share extension is registered with PluginKit as $SHARE_EXTENSION_ID."
   echo "If Photos was already open, quit and reopen Photos before checking Edit > Extensions or Share."

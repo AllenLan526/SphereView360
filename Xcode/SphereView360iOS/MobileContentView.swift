@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 
 struct MobileContentView: View {
     @ObservedObject var store: ViewerStore
-    @State private var selectedVideoItem: PhotosPickerItem?
+    @State private var selectedMediaItem: PhotosPickerItem?
     @State private var isFileImporterPresented = false
     @State private var isImporting = false
 
@@ -14,20 +14,23 @@ struct MobileContentView: View {
             Color.black
                 .ignoresSafeArea()
 
-            if store.hasVideo {
-                SceneKit360VideoView(player: store.player, resetID: store.viewResetID)
+            if store.hasMedia {
+                SceneKit360VideoView(player: store.player, image: store.image, resetID: store.viewResetID)
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     MobileHeader(title: store.displayName, resetAction: store.requestViewReset)
                     Spacer()
-                    MobilePlaybackBar(store: store)
+
+                    if store.hasVideo {
+                        MobilePlaybackBar(store: store)
+                    }
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
             } else {
                 MobileEmptyState(
-                    selectedVideoItem: $selectedVideoItem,
+                    selectedMediaItem: $selectedMediaItem,
                     openFilesAction: { isFileImporterPresented = true }
                 )
             }
@@ -40,12 +43,12 @@ struct MobileContentView: View {
                     .background(.black.opacity(0.62), in: RoundedRectangle(cornerRadius: 8))
             }
         }
-        .task(id: selectedVideoItem) {
-            guard let selectedVideoItem else {
+        .task(id: selectedMediaItem) {
+            guard let selectedMediaItem else {
                 return
             }
 
-            await loadPhotosVideo(selectedVideoItem)
+            await loadPhotosMedia(selectedMediaItem)
         }
         .fileImporter(
             isPresented: $isFileImporterPresented,
@@ -74,20 +77,20 @@ struct MobileContentView: View {
     }
 
     @MainActor
-    private func loadPhotosVideo(_ item: PhotosPickerItem) async {
+    private func loadPhotosMedia(_ item: PhotosPickerItem) async {
         isImporting = true
         defer {
             isImporting = false
-            selectedVideoItem = nil
+            selectedMediaItem = nil
         }
 
         do {
-            guard let movie = try await item.loadTransferable(type: PickedMovie.self) else {
-                store.alertMessage = "Photos did not provide a playable video file."
+            guard let media = try await item.loadTransferable(type: PickedMedia.self) else {
+                store.alertMessage = "Photos did not provide a playable 360 video or image."
                 return
             }
 
-            store.open(movie.url)
+            store.open(media.url)
         } catch {
             store.alertMessage = error.localizedDescription
         }
@@ -99,7 +102,7 @@ struct MobileContentView: View {
                 return
             }
 
-            let temporaryURL = try SharedVideoLoader.copyVideoToTemporaryLocation(url)
+            let temporaryURL = try SharedVideoLoader.copyMediaToTemporaryLocation(url)
             store.open(temporaryURL)
         } catch {
             store.alertMessage = error.localizedDescription
@@ -135,7 +138,7 @@ private struct MobileHeader: View {
 }
 
 private struct MobileEmptyState: View {
-    @Binding var selectedVideoItem: PhotosPickerItem?
+    @Binding var selectedMediaItem: PhotosPickerItem?
     let openFilesAction: () -> Void
 
     var body: some View {
@@ -145,18 +148,18 @@ private struct MobileEmptyState: View {
                 .foregroundStyle(.white.opacity(0.92))
 
             VStack(spacing: 6) {
-                Text("Open a 360 video")
+                Text("Open a 360 video or image")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
 
-                Text("Equirectangular MP4, MOV, M4V, or compatible INSV")
+                Text("Equirectangular MP4, MOV, INSV, JPEG, PNG, HEIC, or TIFF")
                     .font(.callout)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.white.opacity(0.68))
             }
 
             HStack(spacing: 10) {
-                PhotosPicker(selection: $selectedVideoItem, matching: .videos) {
+                PhotosPicker(selection: $selectedMediaItem, matching: .any(of: [.videos, .images])) {
                     Label("Photos", systemImage: "photo.on.rectangle")
                 }
                 .buttonStyle(.borderedProminent)
@@ -221,15 +224,28 @@ private struct MobilePlaybackBar: View {
     }
 }
 
-private struct PickedMovie: Transferable {
+private struct PickedMedia: Transferable {
     let url: URL
 
     static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { movie in
-            SentTransferredFile(movie.url)
+        FileRepresentation(contentType: .movie) { media in
+            SentTransferredFile(media.url)
         } importing: { received in
-            let copiedURL = try SharedVideoLoader.copyVideoToTemporaryLocation(received.file)
-            return PickedMovie(url: copiedURL)
+            let copiedURL = try SharedVideoLoader.copyMediaToTemporaryLocation(
+                received.file,
+                fallbackExtension: "mov"
+            )
+            return PickedMedia(url: copiedURL)
+        }
+
+        FileRepresentation(contentType: .image) { media in
+            SentTransferredFile(media.url)
+        } importing: { received in
+            let copiedURL = try SharedVideoLoader.copyMediaToTemporaryLocation(
+                received.file,
+                fallbackExtension: "jpg"
+            )
+            return PickedMedia(url: copiedURL)
         }
     }
 }

@@ -18,7 +18,7 @@ struct SphereView360App: App {
         }
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Open Video...") {
+                Button("Open 360 Media...") {
                     store.presentOpenPanel()
                 }
                 .keyboardShortcut("o")
@@ -39,7 +39,7 @@ struct SphereView360App: App {
                     store.requestViewReset()
                 }
                 .keyboardShortcut("0")
-                .disabled(!store.hasVideo)
+                .disabled(!store.hasMedia)
             }
         }
     }

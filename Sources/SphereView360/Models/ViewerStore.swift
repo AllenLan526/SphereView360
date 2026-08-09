@@ -6,6 +6,7 @@ final class ViewerStore: ObservableObject {
     @Published private(set) var currentURL: URL?
     @Published private(set) var displayName = ""
     @Published private(set) var player: AVPlayer?
+    @Published private(set) var image: PlatformImage?
     @Published private(set) var isPlaying = false
     @Published private(set) var currentTime: Double = 0
     @Published private(set) var duration: Double = 0
@@ -26,21 +27,35 @@ final class ViewerStore: ObservableObject {
         player != nil
     }
 
+    var hasMedia: Bool {
+        player != nil || image != nil
+    }
+
     func openFirstSupported(_ urls: [URL]) {
-        guard let url = urls.first(where: SupportedVideoTypes.isLikelyVideo) else {
-            alertMessage = "No supported video file was found."
+        guard let url = urls.first(where: SupportedVideoTypes.isLikelyMedia) else {
+            alertMessage = "No supported 360 video or image file was found."
             return
         }
         open(url)
     }
 
     func open(_ url: URL) {
-        guard SupportedVideoTypes.isLikelyVideo(url) else {
-            alertMessage = "\(url.lastPathComponent) is not a supported video file."
+        guard let mediaKind = SupportedVideoTypes.mediaKind(for: url) else {
+            alertMessage = "\(url.lastPathComponent) is not a supported 360 video or image file."
             return
         }
 
+        switch mediaKind {
+        case .video:
+            openVideo(url)
+        case .image:
+            openImage(url)
+        }
+    }
+
+    private func openVideo(_ url: URL) {
         tearDownPlayer()
+        image = nil
 
         let item = AVPlayerItem(url: url)
         let newPlayer = AVPlayer(playerItem: item)
@@ -55,6 +70,22 @@ final class ViewerStore: ObservableObject {
         installObservers(for: newPlayer, item: item)
         requestViewReset()
         play()
+    }
+
+    private func openImage(_ url: URL) {
+        guard let loadedImage = Self.loadImage(from: url) else {
+            alertMessage = "\(url.lastPathComponent) could not be loaded as an image."
+            return
+        }
+
+        tearDownPlayer()
+
+        currentURL = url
+        displayName = url.lastPathComponent
+        image = loadedImage
+        currentTime = 0
+        duration = 0
+        requestViewReset()
     }
 
     func togglePlayback() {
@@ -169,12 +200,20 @@ final class ViewerStore: ObservableObject {
         player = nil
         isPlaying = false
     }
+
+    private static func loadImage(from url: URL) -> PlatformImage? {
+        #if os(macOS)
+        PlatformImage(contentsOf: url)
+        #elseif os(iOS)
+        PlatformImage(contentsOfFile: url.path)
+        #endif
+    }
 }
 
 #if os(macOS)
 extension ViewerStore {
     func presentOpenPanel() {
-        guard let url = VideoOpenPanel.chooseVideo() else {
+        guard let url = VideoOpenPanel.chooseMedia() else {
             return
         }
         open(url)
@@ -183,7 +222,7 @@ extension ViewerStore {
     func registerOpenWithOption() {
         do {
             try OpenWithRegistrationService.registerCurrentAppBundle()
-            alertMessage = "SphereView360 was registered as an Open With option. It was not made the default app for MP4, MOV, or M4V files."
+            alertMessage = "SphereView360 was registered as an Open With option. It was not made the default app for videos or images."
         } catch {
             alertMessage = error.localizedDescription
         }

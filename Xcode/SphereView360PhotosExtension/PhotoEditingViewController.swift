@@ -6,6 +6,7 @@ import PhotosUI
 final class PhotoEditingViewController: NSViewController, PHContentEditingController {
     private var input: PHContentEditingInput?
     private var player: AVPlayer?
+    private var image: PlatformImage?
     private let sceneView = SphereSceneView(frame: .zero)
     private let messageLabel = NSTextField(labelWithString: "")
 
@@ -47,24 +48,46 @@ final class PhotoEditingViewController: NSViewController, PHContentEditingContro
     func startContentEditing(with contentEditingInput: PHContentEditingInput, placeholderImage: NSImage) {
         input = contentEditingInput
 
-        guard let asset = contentEditingInput.audiovisualAsset else {
-            showMessage("Photos did not provide a playable video asset.")
+        if let asset = contentEditingInput.audiovisualAsset {
+            showVideo(asset)
             return
         }
 
+        if let imageURL = contentEditingInput.fullSizeImageURL,
+           let fullSizeImage = NSImage(contentsOf: imageURL) {
+            showImage(fullSizeImage)
+            return
+        }
+
+        showImage(placeholderImage)
+    }
+
+    private func showVideo(_ asset: AVAsset) {
         let playerItem = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: playerItem)
         player.actionAtItemEnd = .none
         self.player = player
+        image = nil
 
         messageLabel.isHidden = true
-        sceneView.setPlayer(player)
+        sceneView.setMedia(player: player, image: nil)
         sceneView.resetCamera(animated: false)
         player.play()
     }
 
+    private func showImage(_ image: PlatformImage) {
+        player?.pause()
+        player = nil
+        self.image = image
+
+        messageLabel.isHidden = true
+        sceneView.setMedia(player: nil, image: image)
+        sceneView.resetCamera(animated: false)
+    }
+
     func finishContentEditing(completionHandler: @escaping (PHContentEditingOutput?) -> Void) {
         player?.pause()
+        image = nil
         completionHandler(nil)
     }
 
@@ -75,14 +98,15 @@ final class PhotoEditingViewController: NSViewController, PHContentEditingContro
     func cancelContentEditing() {
         player?.pause()
         player = nil
+        image = nil
         input = nil
     }
 
     private func showMessage(_ message: String) {
         player?.pause()
         player = nil
+        image = nil
         messageLabel.stringValue = message
         messageLabel.isHidden = false
     }
 }
-

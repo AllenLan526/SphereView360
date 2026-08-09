@@ -11,8 +11,8 @@ struct ContentView: View {
             Color.black
                 .ignoresSafeArea()
 
-            if store.hasVideo {
-                SceneKit360VideoView(player: store.player, resetID: store.viewResetID)
+            if store.hasMedia {
+                SceneKit360VideoView(player: store.player, image: store.image, resetID: store.viewResetID)
                     .ignoresSafeArea()
             } else {
                 EmptyStateView {
@@ -22,11 +22,14 @@ struct ContentView: View {
                 }
             }
 
-            if store.hasVideo {
+            if store.hasMedia {
                 VStack(spacing: 0) {
                     HeaderOverlay(title: store.displayName)
                     Spacer()
-                    PlaybackBar(store: store)
+
+                    if store.hasVideo {
+                        PlaybackBar(store: store)
+                    }
                 }
                 .padding(16)
             }
@@ -43,7 +46,7 @@ struct ContentView: View {
                 Button {
                     store.presentOpenPanel()
                 } label: {
-                    Label("Open Video", systemImage: "folder")
+                    Label("Open Media", systemImage: "folder")
                 }
 
                 Button {
@@ -51,7 +54,7 @@ struct ContentView: View {
                 } label: {
                     Label("Reset View", systemImage: "arrow.counterclockwise")
                 }
-                .disabled(!store.hasVideo)
+                .disabled(!store.hasMedia)
 
                 Button {
                     store.registerOpenWithOption()
@@ -143,11 +146,11 @@ private struct EmptyStateView: View {
                 .foregroundStyle(.white.opacity(0.92))
 
             VStack(spacing: 5) {
-                Text("Drop a 360 video")
+                Text("Drop a 360 video or image")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
 
-                Text("Equirectangular MP4, MOV, M4V, and compatible INSV files")
+                Text("Equirectangular MP4, MOV, INSV, JPEG, PNG, HEIC, or TIFF files")
                     .font(.callout)
                     .foregroundStyle(.white.opacity(0.68))
             }
@@ -156,7 +159,7 @@ private struct EmptyStateView: View {
                 Button {
                     openAction()
                 } label: {
-                    Label("Open Video", systemImage: "folder")
+                    Label("Open Media", systemImage: "folder")
                 }
                 .buttonStyle(.borderedProminent)
 

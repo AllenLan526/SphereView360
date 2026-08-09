@@ -4,15 +4,18 @@ import SwiftUI
 
 #if os(macOS)
 import AppKit
+typealias PlatformImage = NSImage
 private typealias PlatformColor = NSColor
 #elseif os(iOS)
 import UIKit
+typealias PlatformImage = UIImage
 private typealias PlatformColor = UIColor
 #endif
 
 #if os(macOS)
 struct SceneKit360VideoView: NSViewRepresentable {
     let player: AVPlayer?
+    let image: PlatformImage?
     let resetID: UUID
 
     func makeCoordinator() -> Coordinator {
@@ -21,12 +24,12 @@ struct SceneKit360VideoView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> SphereSceneView {
         let view = SphereSceneView(frame: .zero)
-        view.setPlayer(player)
+        view.setMedia(player: player, image: image)
         return view
     }
 
     func updateNSView(_ nsView: SphereSceneView, context: Context) {
-        nsView.setPlayer(player)
+        nsView.setMedia(player: player, image: image)
 
         if context.coordinator.resetID != resetID {
             context.coordinator.resetID = resetID
@@ -45,6 +48,7 @@ struct SceneKit360VideoView: NSViewRepresentable {
 #elseif os(iOS)
 struct SceneKit360VideoView: UIViewRepresentable {
     let player: AVPlayer?
+    let image: PlatformImage?
     let resetID: UUID
 
     func makeCoordinator() -> Coordinator {
@@ -53,12 +57,12 @@ struct SceneKit360VideoView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> SphereSceneView {
         let view = SphereSceneView(frame: .zero)
-        view.setPlayer(player)
+        view.setMedia(player: player, image: image)
         return view
     }
 
     func updateUIView(_ uiView: SphereSceneView, context: Context) {
-        uiView.setPlayer(player)
+        uiView.setMedia(player: player, image: image)
 
         if context.coordinator.resetID != resetID {
             context.coordinator.resetID = resetID
@@ -95,6 +99,7 @@ final class SphereSceneView: SCNView {
     private let pitchNode = SCNNode()
     private let cameraNode = SCNNode()
     private weak var currentPlayer: AVPlayer?
+    private var currentImage: PlatformImage?
     private var yaw: CGFloat = 0
     private var pitch: CGFloat = 0
     private var fieldOfView: CGFloat = CameraControl.defaultFieldOfView
@@ -119,15 +124,18 @@ final class SphereSceneView: SCNView {
     }
     #endif
 
-    func setPlayer(_ player: AVPlayer?) {
-        guard currentPlayer !== player else {
+    func setMedia(player: AVPlayer?, image: PlatformImage?) {
+        guard currentPlayer !== player || currentImage !== image else {
             return
         }
 
         currentPlayer = player
+        currentImage = image
 
         if let player {
             sphereMaterial.diffuse.contents = player
+        } else if let image {
+            sphereMaterial.diffuse.contents = image
         } else {
             sphereMaterial.diffuse.contents = PlatformColor.black
         }

@@ -24,6 +24,23 @@
         <string>dev.local.insv</string>
       </array>
     </dict>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>360 Image</string>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>LSHandlerRank</key>
+      <string>Alternate</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>public.image</string>
+        <string>public.jpeg</string>
+        <string>public.png</string>
+        <string>public.heic</string>
+        <string>public.heif</string>
+        <string>public.tiff</string>
+      </array>
+    </dict>
   </array>
   <key>CFBundleExecutable</key>
   <string>$(EXECUTABLE_NAME)</string>
@@ -44,7 +61,7 @@
   <key>LSSupportsOpeningDocumentsInPlace</key>
   <true/>
   <key>NSPhotoLibraryUsageDescription</key>
-  <string>SphereView360 needs access to selected videos so it can preview 360 footage.</string>
+  <string>SphereView360 needs access to selected photos and videos so it can preview 360 media.</string>
   <key>UIApplicationSupportsIndirectInputEvents</key>
   <true/>
   <key>UILaunchScreen</key>

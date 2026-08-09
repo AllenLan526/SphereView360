@@ -6,7 +6,7 @@ import Cocoa
 
 final class ShareViewController: NSViewController {
     private let sceneView = SphereSceneView(frame: .zero)
-    private let messageLabel = NSTextField(labelWithString: "Loading video...")
+    private let messageLabel = NSTextField(labelWithString: "Loading media...")
     private let doneButton = NSButton(title: "Done", target: nil, action: nil)
     private var player: AVPlayer?
 
@@ -52,7 +52,7 @@ final class ShareViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         preferredContentSize = NSSize(width: 920, height: 580)
-        loadSharedVideo()
+        loadSharedMedia()
     }
 
     override func viewDidDisappear() {
@@ -65,24 +65,30 @@ final class ShareViewController: NSViewController {
         extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
 
-    private func loadSharedVideo() {
-        SharedVideoLoader.loadFirstVideoURL(from: extensionContext) { [weak self] result in
+    private func loadSharedMedia() {
+        SharedVideoLoader.loadFirstMedia(from: extensionContext) { [weak self] result in
             DispatchQueue.main.async {
-                self?.handleLoadedVideo(result)
+                self?.handleLoadedMedia(result)
             }
         }
     }
 
-    private func handleLoadedVideo(_ result: Result<URL, Error>) {
+    private func handleLoadedMedia(_ result: Result<SharedVideoLoader.LoadedMedia, Error>) {
         switch result {
-        case .success(let url):
+        case .success(.video(let url)):
             let player = AVPlayer(url: url)
             player.actionAtItemEnd = .none
             self.player = player
             messageLabel.isHidden = true
-            sceneView.setPlayer(player)
+            sceneView.setMedia(player: player, image: nil)
             sceneView.resetCamera(animated: false)
             player.play()
+        case .success(.image(let image)):
+            player?.pause()
+            player = nil
+            messageLabel.isHidden = true
+            sceneView.setMedia(player: nil, image: image)
+            sceneView.resetCamera(animated: false)
         case .failure(let error):
             messageLabel.stringValue = error.localizedDescription
             messageLabel.isHidden = false
@@ -106,7 +112,7 @@ final class ShareViewController: UIViewController {
         rootView.addSubview(sceneView)
 
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        messageLabel.text = "Loading video..."
+        messageLabel.text = "Loading media..."
         messageLabel.textAlignment = .center
         messageLabel.font = .systemFont(ofSize: 15, weight: .medium)
         messageLabel.textColor = .secondaryLabel
@@ -137,7 +143,7 @@ final class ShareViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadSharedVideo()
+        loadSharedMedia()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -150,24 +156,30 @@ final class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
 
-    private func loadSharedVideo() {
-        SharedVideoLoader.loadFirstVideoURL(from: extensionContext) { [weak self] result in
+    private func loadSharedMedia() {
+        SharedVideoLoader.loadFirstMedia(from: extensionContext) { [weak self] result in
             DispatchQueue.main.async {
-                self?.handleLoadedVideo(result)
+                self?.handleLoadedMedia(result)
             }
         }
     }
 
-    private func handleLoadedVideo(_ result: Result<URL, Error>) {
+    private func handleLoadedMedia(_ result: Result<SharedVideoLoader.LoadedMedia, Error>) {
         switch result {
-        case .success(let url):
+        case .success(.video(let url)):
             let player = AVPlayer(url: url)
             player.actionAtItemEnd = .none
             self.player = player
             messageLabel.isHidden = true
-            sceneView.setPlayer(player)
+            sceneView.setMedia(player: player, image: nil)
             sceneView.resetCamera(animated: false)
             player.play()
+        case .success(.image(let image)):
+            player?.pause()
+            player = nil
+            messageLabel.isHidden = true
+            sceneView.setMedia(player: nil, image: image)
+            sceneView.resetCamera(animated: false)
         case .failure(let error):
             messageLabel.text = error.localizedDescription
             messageLabel.isHidden = false

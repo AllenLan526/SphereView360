@@ -26,6 +26,7 @@
     <dict>
       <key>PHSupportedMediaTypes</key>
       <array>
+        <string>Image</string>
         <string>Video</string>
       </array>
     </dict>
@@ -36,4 +37,3 @@
   </dict>
 </dict>
 </plist>
-

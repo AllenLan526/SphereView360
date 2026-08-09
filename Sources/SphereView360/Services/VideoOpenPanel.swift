@@ -2,10 +2,10 @@ import AppKit
 
 enum VideoOpenPanel {
     @MainActor
-    static func chooseVideo() -> URL? {
+    static func chooseMedia() -> URL? {
         let panel = NSOpenPanel()
-        panel.title = "Open 360 Video"
-        panel.message = "Choose an equirectangular 360 video."
+        panel.title = "Open 360 Media"
+        panel.message = "Choose an equirectangular 360 video or image."
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -14,4 +14,3 @@ enum VideoOpenPanel {
         return panel.runModal() == .OK ? panel.url : nil
     }
 }
-
