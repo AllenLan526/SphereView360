@@ -91,6 +91,8 @@ final class SphereSceneView: SCNView {
     }
 
     private let sphereMaterial = SCNMaterial()
+    private let yawNode = SCNNode()
+    private let pitchNode = SCNNode()
     private let cameraNode = SCNNode()
     private weak var currentPlayer: AVPlayer?
     private var yaw: CGFloat = 0
@@ -184,7 +186,9 @@ final class SphereSceneView: SCNView {
 
         cameraNode.camera = camera
         cameraNode.position = SCNVector3Zero
-        scene.rootNode.addChildNode(cameraNode)
+        pitchNode.addChildNode(cameraNode)
+        yawNode.addChildNode(pitchNode)
+        scene.rootNode.addChildNode(yawNode)
 
         pointOfView = cameraNode
         configurePlatformInput()
@@ -214,13 +218,14 @@ final class SphereSceneView: SCNView {
     }
 
     private func applyCamera() {
-        cameraNode.eulerAngles = SCNVector3(Float(pitch), Float(yaw), 0)
+        yawNode.eulerAngles = SCNVector3(0, Float(yaw), 0)
+        pitchNode.eulerAngles = SCNVector3(Float(pitch), 0, 0)
         cameraNode.camera?.fieldOfView = fieldOfView
     }
 
     private func rotateCamera(deltaX: CGFloat, deltaY: CGFloat, sensitivity: CGFloat) {
         yaw += deltaX * sensitivity
-        pitch += deltaY * sensitivity
+        pitch -= deltaY * sensitivity
         pitch = min(max(pitch, CameraControl.minimumPitch), CameraControl.maximumPitch)
         applyCamera()
     }
