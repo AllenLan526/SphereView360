@@ -285,7 +285,7 @@ final class SphereSceneView: SCNView {
 
         rotateCamera(
             deltaX: event.scrollingDeltaX,
-            deltaY: event.scrollingDeltaY,
+            deltaY: -event.scrollingDeltaY,
             sensitivity: sensitivity
         )
     }
@@ -333,9 +333,10 @@ final class SphereSceneView: SCNView {
 
     @objc private func handleTwoFingerPan(_ recognizer: UIPanGestureRecognizer) {
         let translation = recognizer.translation(in: self)
+        // Two-finger movement follows the macOS scroll-wheel path, not grab-drag semantics.
         rotateCamera(
             deltaX: translation.x,
-            deltaY: -translation.y,
+            deltaY: translation.y,
             sensitivity: CameraControl.preciseScrollRadiansPerPoint
         )
         recognizer.setTranslation(.zero, in: self)
